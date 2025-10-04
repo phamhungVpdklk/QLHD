@@ -1,14 +1,17 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 if (!process.env.API_KEY) {
-    console.warn("Biến môi trường API_KEY chưa được thiết lập. Các tính năng của Gemini API sẽ bị vô hiệu hóa.");
+    console.warn("Biến môi trường API_KEY chưa được thiết lập. Các tính năng của OpenAI API sẽ bị vô hiệu hóa.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+const openai = new OpenAI({ 
+    apiKey: process.env.API_KEY!,
+    dangerouslyAllowBrowser: true 
+});
 
 export const generateSqlSchema = async (description: string): Promise<string> => {
     if (!process.env.API_KEY) {
-        return Promise.resolve("```sql\n-- API_KEY chưa được cấu hình. Vui lòng thiết lập biến môi trường API_KEY để sử dụng Gemini API.\n```");
+        return Promise.resolve("```sql\n-- API_KEY chưa được cấu hình. Vui lòng thiết lập biến môi trường API_KEY để sử dụng OpenAI API.\n```");
     }
     try {
         const prompt = `Dựa trên mô tả về phần mềm quản lý hợp đồng sau đây, hãy viết một bộ câu lệnh SQL đầy đủ, an toàn và có thể chạy lại nhiều lần (idempotent) cho PostgreSQL.
@@ -53,12 +56,13 @@ Mô tả: "${description}"
 
 7.  **Output**: Trả về một khối code SQL hợp lệ, có chú thích rõ ràng, theo đúng thứ tự.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
         });
 
-        return response.text;
+        return response.choices[0].message.content || "Không thể tạo SQL.";
     } catch (error) {
         console.error("Lỗi khi tạo lược đồ SQL:", error);
         return "Lỗi khi tạo SQL. Vui lòng kiểm tra console để biết chi tiết.";
@@ -67,7 +71,7 @@ Mô tả: "${description}"
 
 export const generateBackendCode = async (description: string): Promise<string> => {
     if (!process.env.API_KEY) {
-        return Promise.resolve("```javascript\n// API_KEY chưa được cấu hình. Vui lòng thiết lập biến môi trường API_KEY để sử dụng Gemini API.\n```");
+        return Promise.resolve("```javascript\n// API_KEY chưa được cấu hình. Vui lòng thiết lập biến môi trường API_KEY để sử dụng OpenAI API.\n```");
     }
     try {
         const prompt = `Dựa trên mô tả và yêu cầu sau, hãy viết các hàm cơ sở dữ liệu PostgreSQL (RPC) để xử lý TOÀN BỘ logic nghiệp vụ.
@@ -153,12 +157,13 @@ Yêu cầu chi tiết cho 5 hàm RPC bằng ngôn ngữ PL/pgSQL:
 ---
 **Cấu trúc Output**: Trình bày mã nguồn dưới dạng các câu lệnh \`CREATE OR REPLACE FUNCTION ...\` rõ ràng, có chú thích.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
         });
 
-        return response.text;
+        return response.choices[0].message.content || "Không thể tạo mã nguồn backend.";
     } catch (error) {
         console.error("Lỗi khi tạo mã nguồn backend:", error);
         return "Lỗi khi tạo mã nguồn backend. Vui lòng kiểm tra console để biết chi tiết.";
