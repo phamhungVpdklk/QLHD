@@ -1,0 +1,5 @@
+{
+  "name": "Trợ lý Quản lý Hợp đồng",
+  "description": "Một trợ lý thông minh giúp tạo lược đồ cơ sở dữ liệu, mã nguồn backend và quản lý hợp đồng cho hệ thống quản lý hợp đồng. Cung cấp giải pháp tạo mã nguồn full-stack và một giao diện người dùng hoạt động.",
+  "requestFramePermissions": []
+}
