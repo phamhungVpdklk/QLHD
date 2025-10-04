@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.21.0",
     "@supabase/supabase-js": "2",
     "openai": "^6.1.0",
     "react": "^19.2.0",
