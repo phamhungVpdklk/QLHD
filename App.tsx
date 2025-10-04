@@ -5,6 +5,10 @@ import { DocumentIcon } from './components/icons/DocumentIcon';
 import { ChartBarIcon } from './components/icons/ChartBarIcon';
 import { MoonIcon } from './components/icons/MoonIcon';
 import { SunIcon } from './components/icons/SunIcon';
+import { supabase } from './services/supabaseClient';
+import { Session } from '@supabase/supabase-js';
+import LoginPage from './components/LoginPage';
+import { LogoutIcon } from './components/icons/LogoutIcon';
 
 enum Tab {
   MANAGER = 'MANAGER',
@@ -12,6 +16,8 @@ enum Tab {
 }
 
 const App: React.FC = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.MANAGER);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -19,6 +25,19 @@ const App: React.FC = () => {
     }
     return 'light';
   });
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -30,6 +49,10 @@ const App: React.FC = () => {
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const renderContent = () => {
@@ -56,6 +79,21 @@ const App: React.FC = () => {
       {label}
     </button>
   );
+  
+  if (isLoading) {
+    return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+            <svg className="animate-spin h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
@@ -68,13 +106,23 @@ const App: React.FC = () => {
               </svg>
               <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Trợ lý Quản lý Hợp đồng</h1>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
+                {session.user.email}
+              </span>
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
                 aria-label="Toggle theme"
               >
                 {theme === 'light' ? <MoonIcon className="h-6 w-6" /> : <SunIcon className="h-6 w-6" />}
+              </button>
+               <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+                  aria-label="Đăng xuất"
+              >
+                  <LogoutIcon className="h-6 w-6" />
               </button>
             </div>
           </div>
